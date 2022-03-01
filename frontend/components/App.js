@@ -25,6 +25,7 @@ export default function App() {
   const logout = () => {
     setMessage('Goodbye!')
     window.localStorage.removeItem('token')
+    setMessage('Goodbye!')
     redirectToLogin()
   }
 
@@ -34,6 +35,8 @@ export default function App() {
     axiosWithAuth().post(loginUrl, {username, password})
       .then(res =>{
         window.localStorage.setItem('token', res.data.token)
+        setMessage(res.data.message)
+        setSpinnerOn(false)
         redirectToArticles()
       })
       .catch(err=>{
@@ -80,13 +83,41 @@ export default function App() {
     })
   }
 
-  const updateArticle = ({ article_id, article }) => {
+  const updateArticle = (article_id, article ) => {
     // ✨ implement
     // You got this!
+    setSpinnerOn(true);
+    setMessage('');
+   
+    axiosWithAuth().put(`${articlesUrl}/${article_id}`, article)
+    .then(res => {
+      setArticles(articles.map(art => {
+        return (art.article_id === article.article_id) ? res.data.article : art
+      }))
+      setCurrentArticleId()
+      setSpinnerOn(false)
+      setMessage(res.data.message)
+    })
+    .catch(err=>{
+      debugger
+    })
   }
 
   const deleteArticle = article_id => {
-    // ✨ implement
+    setMessage('');
+    setSpinnerOn(true);
+
+    axiosWithAuth().delete(`${articlesUrl}/${article_id}`)
+    .then(res => {
+      setArticles(articles.filter((art) => {
+        return art.article_id != article_id;
+      }))
+      setSpinnerOn(false)
+      setMessage(res.data.message)
+    })
+    .catch(err => {
+      debugger
+    })
   }
 
   return (
@@ -105,7 +136,7 @@ export default function App() {
           <Route path="/" element={<LoginForm login={login}/>} />
           <Route path="articles" element={
             <>
-              <ArticleForm postArticle={postArticle}/>
+              <ArticleForm postArticle={postArticle} updateArticle={updateArticle} setCurrentArticleId={setCurrentArticleId} currentArticle={articles.find((art) =>{return art.article_id === currentArticleId})}/>
               <Articles articles={articles} getArticles={getArticles} deleteArticle={deleteArticle} setCurrentArticleId={setCurrentArticleId} currentArticleId={currentArticleId}/>
             </>
           } />
